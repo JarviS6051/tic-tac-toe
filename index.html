@@ -168,6 +168,12 @@
     });
 }
 
+        function stopAllSounds() {
+        [moveSound, winSound, drawSound].forEach(sound => {
+        sound.pause();        
+        sound.currentTime = 0; 
+        });
+        }
 
         function restartGame() {
             gameBoard = ['', '', '', '', '', '', '', '', ''];
@@ -177,6 +183,7 @@
                 cell.textContent = '';
                 cell.classList.remove('clicked', 'pulse');
             });
+            stopAllSounds();
         }
 
         createBoard();
