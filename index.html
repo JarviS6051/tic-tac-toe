@@ -15,6 +15,8 @@
             margin: auto;
             max-width: 340px;
             max-height: 340px;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
         }
         .cell {
             display: flex;
@@ -36,13 +38,29 @@
         .cell.clicked {
             animation: cellClick 0.3s ease;
         }
+        .cell.invalid {
+            animation: shake 0.5s ease;
+        }
+        .cell.winning {
+            animation: zoomIn 0.5s ease forwards;
+        }
         @keyframes cellClick {
-            from {
-                transform: scale(1);
-            }
-            to {
-                transform: scale(1.1);
-            }
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes zoomIn {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
         }
         .avatar {
             width: 60px;
@@ -61,6 +79,22 @@
         .player-info img {
             border: 2px solid #ddd;
         }
+        .player-info .active {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0); }
+            50% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.8); }
+            100% { box-shadow: 0 0 10px rgba(255, 255, 255, 0); }
+        }
+        .bg-gradient {
+            background: linear-gradient(45deg, #ff6b6b, #f7d794);
+            animation: gradientChange 1s forwards;
+        }
+        @keyframes gradientChange {
+            from { background: #1a202c; }
+            to { background: linear-gradient(45deg, #ff6b6b, #f7d794); }
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans flex items-center justify-center min-h-screen">
@@ -68,11 +102,11 @@
     <div class="text-center p-6 bg-gray-800 rounded-lg shadow-lg">
         <h1 class="text-5xl font-bold mb-6 text-white">Tic-Tac-Toe</h1>
         <div class="player-info mb-6">
-            <img id="player-x-avatar" src="player-x-avatar.png" alt="Player X" class="avatar">
+            <img id="player-x-avatar" src="Untitled.png" alt="Player X" class="avatar">
             <span id="player-x" class="text-2xl font-semibold text-white">Player X</span>
             <span class="text-2xl text-white">vs</span>
             <span id="player-o" class="text-2xl font-semibold text-white">Player O</span>
-            <img id="player-o-avatar" src="player-o-avatar.png" alt="Player O" class="avatar">
+            <img id="player-o-avatar" src="OIP.jpeg" alt="Player O" class="avatar">
         </div>
         <div id="board" class="board"></div>
         <p id="message" class="mt-4 text-xl text-white"></p>
@@ -106,7 +140,11 @@
 
         function handleClick(event) {
             const index = event.target.dataset.index;
-            if (gameBoard[index] !== '' || checkWinner()) return;
+            if (gameBoard[index] !== '' || checkWinner()) {
+                event.target.classList.add('invalid');
+                setTimeout(() => event.target.classList.remove('invalid'), 500);
+                return;
+            }
             gameBoard[index] = currentPlayer;
             event.target.textContent = currentPlayer;
             event.target.classList.add('clicked');
@@ -114,13 +152,15 @@
             if (checkWinner()) {
                 message.textContent = `${currentPlayer} wins!`;
                 winSound.play();
-                drawWinningLine();
+                highlightWinningCells();
+                document.querySelector('.text-center').classList.add('bg-gradient');
             } else if (gameBoard.every(cell => cell !== '')) {
                 message.textContent = 'It\'s a draw!';
                 drawSound.play();
             } else {
                 currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
                 message.textContent = `Player ${currentPlayer}'s turn`;
+                updatePlayerHighlight();
             }
         }
 
@@ -144,19 +184,33 @@
                 return false;
             });
         }
+
+        function highlightWinningCells() {
+            winningCombination.forEach(index => {
+                document.querySelector(`[data-index='${index}']`).classList.add('winning');
+            });
+        }
+
+        function updatePlayerHighlight() {
+            document.querySelector('.player-info .active').classList.remove('active');
+            document.getElementById(`player-${currentPlayer.toLowerCase()}`).classList.add('active');
+        }
+
         function restartGame() {
             gameBoard = ['', '', '', '', '', '', '', '', ''];
             currentPlayer = 'X';
             message.textContent = `Player ${currentPlayer}'s turn`;
             board.querySelectorAll('.cell').forEach(cell => {
                 cell.textContent = '';
-                cell.classList.remove('clicked');
+                cell.classList.remove('clicked', 'winning');
             });
-            board.querySelectorAll('.winning-line').forEach(line => line.remove());
+            document.querySelector('.text-center').classList.remove('bg-gradient');
+            updatePlayerHighlight();
         }
 
         createBoard();
         message.textContent = `Player ${currentPlayer}'s turn`;
+        updatePlayerHighlight();
     </script>
 </body>
 </html>
